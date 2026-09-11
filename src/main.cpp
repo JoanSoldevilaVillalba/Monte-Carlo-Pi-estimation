@@ -2,7 +2,8 @@
 #include <omp.h>
 #include <random>
 #define SQUARE_SIZE 4
-#define AMOUNT_POINTS 100
+#define AMOUNT_POINTS 1000
+#define NUM_THREADS 5
 typedef enum{
 BOTTOM_LEFT = 0,
 BOTTOM_RIGHT = 1,
@@ -18,37 +19,56 @@ typedef struct{
 
 }point;
 
-float calculate_distance(pointer center, point random_point){
+inline float calculate_distance(point center, point random_point){
 
-	return sqrtf(center.m_x*random_point.m_x + center.my*random_point.m_y);
+	return sqrtf(center.m_x*random_point.m_x + center.m_y*random_point.m_y);
 
 }
 
-float simulation(std::mt19937* generation, std::uniform_real_distribution<float>* dis_engine){
+float simulation(std::mt19937* generation, std::uniform_real_distribution<float>* dis_engine, point circle_center){
 
+
+	//in this case, we are spawning or taking from the pool of threads of openMP 5 threads, we are staticly asining the workload, meaning no added overhead
+	//and in this case each thread is going to first execute 20 units of workload,
+
+	float accumulation_inside = 0.0f;
+	float accumulation_total = 0.0f;
+	#pragma omp parallel for schedule(static) num_threads(NUM_THREADS,20) reduction(+:accumulation_total,accumulation_inside)
 	for(int i = 0;i<AMOUNT_POINTS;i++){
 
 
 		point random_point;
-		random_point = *(dis_engine)(*(generation));
-		random_point = *(dis_enigne)(*(generation));
+		random_point.m_x = (*dis_engine)(*generation);
+		random_point.m_y = (*dis_engine)(*generation);
 		//we have generated both numbers
-		float distance = calcualte_distance(circle_center, random_point);
+		float distance = calculate_distance(circle_center, random_point);
+		//now we need to determinae if the point is inside the circle
 
+		float difference =distance - 0.5f;
+		int clover = (int(difference) >>31) & 1; //if i is equal to one, this means that distance is smaller than 0.5f, which means the point is inside of the circle
+		//so this means that we can just add it, if its zero, that means that distance was greated
+		accumulation_inside = accumulation_inside + float(clover);
+		accumulation_total++;
 
 	}
+
+	return 4 * accumulation_inside/accumulation_total;
 }
 
 int main(void){
 
 	std::random_device random_seed;
 
-	std::mt19937 gen(rd());
+	std::mt19937 gen(random_seed());
 
 	std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-	point array_square[SQUARE_SIZE] = {{0.0f, 0.0f},{1.0f, 0.0f},{0.0f,1.0f}, {1.0f, 1.0f}}
+	point array_square[SQUARE_SIZE] = {{0.0f, 0.0f},{1.0f, 0.0f},{0.0f,1.0f}, {1.0f, 1.0f}};
 
-	point circle = {0.5f, 0.5f};
+	point circle_center = {0.5f, 0.5f};
+
+	float result_of_simulation = simulation(&gen, &dis, circle_center);
+
+	printf("We have the following resolution of pi: %f\n", result_of_simulation);
 
 }
