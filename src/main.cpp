@@ -4,6 +4,7 @@
 #define SQUARE_SIZE 4
 #define AMOUNT_POINTS 1000
 #define NUM_THREADS 5
+#define CHUNK 20
 typedef enum{
 BOTTOM_LEFT = 0,
 BOTTOM_RIGHT = 1,
@@ -21,7 +22,10 @@ typedef struct{
 
 inline float calculate_distance(point center, point random_point){
 
-	return sqrtf(center.m_x*random_point.m_x + center.m_y*random_point.m_y);
+	float difference_x =center.m_x - random_point.m_x;
+	float difference_y = center.m_y - random_point.m_y;
+
+	return sqrtf(difference_x*difference_x + difference_y*difference_y);
 
 }
 
@@ -33,7 +37,7 @@ float simulation(std::mt19937* generation, std::uniform_real_distribution<float>
 
 	float accumulation_inside = 0.0f;
 	float accumulation_total = 0.0f;
-	#pragma omp parallel for schedule(static) num_threads(NUM_THREADS,20) reduction(+:accumulation_total,accumulation_inside)
+	#pragma omp parallel for schedule(static,CHUNK) num_threads(NUM_THREADS) reduction(+:accumulation_total,accumulation_inside)
 	for(int i = 0;i<AMOUNT_POINTS;i++){
 
 
