@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <omp.h>
 #include <random>
+#include <cstring>
 #define SQUARE_SIZE 4
 #define AMOUNT_POINTS 1000
 #define NUM_THREADS 5
@@ -49,7 +50,9 @@ float simulation(std::mt19937* generation, std::uniform_real_distribution<float>
 		//now we need to determinae if the point is inside the circle
 
 		float difference =distance - 0.5f;
-		int clover = (int(difference) >>31) & 1; //if i is equal to one, this means that distance is smaller than 0.5f, which means the point is inside of the circle
+		int clover = 0;
+		memcpy(&clover, &difference, sizeof(clover));
+		clover = (int(clover) >>31) & 1; //if i is equal to one, this means that distance is smaller than 0.5f, which means the point is inside of the circle
 		//so this means that we can just add it, if its zero, that means that distance was greated
 		accumulation_inside = accumulation_inside + float(clover);
 		accumulation_total++;
