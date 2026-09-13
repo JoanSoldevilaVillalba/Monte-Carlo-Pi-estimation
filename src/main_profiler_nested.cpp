@@ -2,19 +2,15 @@
 #include <omp.h>
 #include <random>
 #include <cstring>
-#define SQUARE_SIZE 4
+
 #define AMOUNT_POINTS 1000000
 #define NUM_THREADS_SIMULATION 2
 #define NUM_THREADS_CALCULATION 3
 #define CHUNK_SIMULATION 50
 #define CHUNK_CALCULATION 333333
 #define NUMBER_OF_SIMULATIONS 100
-typedef enum{
-BOTTOM_LEFT = 0,
-BOTTOM_RIGHT = 1,
-TOP_LEFT = 2,
-TOP_RIGHT = 3
-}square_points;
+
+
 
 typedef struct{
 
@@ -43,8 +39,7 @@ float number_total;
 struct thread_profiler profiler = {0.0f,0.0f};
 #pragma omp threadprivate(profiler)
 
-//remmebr that defining this means that each thread is going to have its own personal profiler, all threads of openMP have now autmicaly in compile time allocated  this to their stack, or rather their data stack: .tdata or .tbss
-float simulation_array[NUM_THREADS_SIMULATION];//for now we are 
+float simulation_array[NUM_THREADS_SIMULATION];
 float simulation(point circle_center, std::random_device& random_seed){
 
         float accumulation_inside = 0.0f;
@@ -56,7 +51,7 @@ float simulation(point circle_center, std::random_device& random_seed){
 
                 int thread_id = omp_get_thread_num();
 
-                std::mt19937 generation(random_seed());//random seed is set, 
+                std::mt19937 generation(random_seed());
                 std::uniform_real_distribution<float> dis_engine(0.0f, 1.0f);
 
                 #pragma omp for schedule(static, CHUNK_CALCULATION)
@@ -107,7 +102,6 @@ int main(void){
 
         point circle_center = {0.5f, 0.5f};
 
-        //we are going to call simulation several times
 	float sim_acc=0.0f;
 	float incrementer = 0.0f;
         #pragma omp parallel num_threads(NUM_THREADS_SIMULATION) reduction(+:sim_acc,incrementer)
@@ -121,7 +115,7 @@ int main(void){
                         sim_acc = sim_acc + simulation(circle_center, random_seed);
 			incrementer++;
                 }
-		sim_acc = sim_acc / incrementer;//we are taking the mean and then comparing each thread wiuth their reslt
+		sim_acc = sim_acc / incrementer;
                 simulation_array[thread_id] = sim_acc;
 		printf("Simulation thread with id %d has the following aproximation: %f\n", thread_id, sim_acc);
 		printf("Number of simulations done: %f\n\n",incrementer);
