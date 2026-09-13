@@ -40,7 +40,7 @@ float number_total;
 struct thread_profiler profiler = {0.0f,0.0f};
 #pragma omp threadprivate(profiler)
 
-float simulation(point circle_center){
+float simulation(point circle_center, std::random_device& random_seed){
 
 	float accumulation_inside = 0.0f;
 
@@ -51,7 +51,7 @@ float simulation(point circle_center){
 
 		int thread_id = omp_get_thread_num();
 
-		std::mt19937 generation(1337 + thread_id);
+		std::mt19937 generation(random_seed());//random seed is set, 
 		std::uniform_real_distribution<float> dis_engine(0.0f, 1.0f);
 
 		#pragma omp for schedule(static, CHUNK)
@@ -100,15 +100,9 @@ int main(void){
 
 	std::random_device random_seed;
 
-	std::mt19937 gen(random_seed());
-
-	std::uniform_real_distribution<float> dis(0.0f, 1.0f);
-
-	//point array_square[SQUARE_SIZE] = {{0.0f, 0.0f},{1.0f, 0.0f},{0.0f,1.0f}, {1.0f, 1.0f}};
-
 	point circle_center = {0.5f, 0.5f};
 
-	float result_of_simulation = simulation(circle_center);
+	float result_of_simulation = simulation(circle_center, random_seed);
 
 	printf("We have the following resolution of pi: %f\n", result_of_simulation);
 
